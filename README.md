@@ -13,7 +13,7 @@ An offline, terminal-based voice assistant designed for privacy, accessibility, 
 ## Installation
 1. Clone the repository:  
 ```bash
-git clone
+git clone https://github.com/Aaryan-J/Voice-Assisstant-for-PWD.git
 ```
 2. Install dependencies:
 ```bash
@@ -24,7 +24,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-# Usage
+## Usage
 Start the program and speak commands into your microphone.
 Example commands:
 “Take note: Buy groceries tomorrow”
@@ -32,12 +32,12 @@ Example commands:
 “Show my notes”
 Notes and reminders are stored locally, maintaining full privacy.
 
-# Modularity & Extensibility
+## Modularity & Extensibility
 - Each feature is implemented as a separate module, making it easy to add new capabilities.
 - Developers can create additional modules for tasks such as:
 - Calendar management
 - Local file operations
 - Music or media control
 
-# Contributing
+## Contributing
 Contributions are welcome! Add new modules, improve voice recognition, or suggest enhancements. Please follow standard Python practices and document any new module added.
