@@ -11,7 +11,7 @@ def speak(text):
     if not text:
         return
 
-    engine = pyttsx3.init('sapi5')  # fresh engine every time
+    engine = pyttsx3.init()  # fresh engine every time
     engine.setProperty('rate', 160)  # speech speed
     engine.say(text)
     engine.runAndWait()

@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from playsound import playsound
+from playsound3 import playsound
 
 REMINDERS_FILE = "data/reminders.json"
 ALARM_FILE = "assets/alarms.mp3"

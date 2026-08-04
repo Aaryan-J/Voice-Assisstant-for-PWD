@@ -1,26 +1,68 @@
-import speech_recognition as sr
+import json
+import time
+import sounddevice as sd
+from vosk import Model, KaldiRecognizer
 
 def listen():
-    r = sr.Recognizer()
-    r.energy_threshold = 300
-    r.dynamic_energy_threshold = True
+    # 1. Let Vosk auto-download and cache the model natively
+    try:
+        print("Initializing model (will download automatically on first run)...")
+        model = Model(lang="en-us")
+    except Exception as e:
+        print(f"Error initializing Vosk model: {e}")
+        return ""
 
-    with sr.Microphone() as source:
-        print("Listening...")
+    sample_rate = 16000
+    recognizer = KaldiRecognizer(model, sample_rate)
+
+    print("Listening...")
+
+    timeout = 5
+    phrase_limit = 5
+
+    start_time = time.time()
+    speech_started_time = None
+    has_speech_started = False
+
+    with sd.RawInputStream(samplerate=sample_rate, blocksize=4000, dtype='int16', channels=1) as stream:
+        while True:
+            data, overflowed = stream.read(4000)
+            current_time = time.time()
+
+            if not has_speech_started and (current_time - start_time > timeout):
+                print("No speech detected.")
+                return ""
+
+            if has_speech_started and speech_started_time is not None and(current_time - speech_started_time > phrase_limit):
+                print("Phrase time limit reached.")
+                result_json = recognizer.FinalResult()
+                break
+
+            if recognizer.AcceptWaveform(bytes(data)):
+                result_json = recognizer.Result()
+                break
+            else:
+                partial_json = recognizer.PartialResult()
+                partial_dict = json.loads(partial_json)
+                if partial_dict.get("partial", "") != "":
+                    if not has_speech_started:
+                        has_speech_started = True
+                        speech_started_time = time.time()
+
         try:
-            audio = r.listen(source, timeout=5, phrase_time_limit=5)
-        except sr.WaitTimeoutError:
-            print("No speech detected.")
+            result_dict = json.loads(result_json)
+            text = result_dict.get("text", "").lower().strip()
+
+            if text:
+                print(f"You said: {text}")
+                return text
+            else:
+                print("Sorry, I did not understand that.")
+                return ""
+
+        except Exception:
+            print("Error parsing audio results.")
             return ""
 
-    try:
-        text = r.recognize_google(audio)
-        text = text.lower().strip()
-        print(f"You said: {text}")
-        return text
-    except sr.UnknownValueError:
-        print("Sorry, I did not understand that.")
-        return ""
-    except sr.RequestError:
-        print("Could not request results; check your network connection.")
-        return ""
+if __name__ == "__main__":
+    command = listen()
