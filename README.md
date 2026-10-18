@@ -4,10 +4,12 @@
 An offline, terminal-based voice assistant designed for privacy, accessibility, and modularity. It allows users to take notes, set reminders, and perform basic tasks entirely offline. The system is built to be easily extendable, so additional features can be integrated seamlessly in the future.
 
 ## Features
-- **Offline Voice Commands**: Fully functional without an internet connection.
+- **Fully Offline**: Works without an internet connection — built for privacy and accessibility (PWD).
 - **Note Taking via Voice**: Quickly capture ideas or reminders using speech.
-- **Reminder Setting**: Set and receive reminders through voice commands.
-- **Modular Architecture**: Easily extendable to add new features, commands, or integrations.
+- **Date-Aware Reminders**: Set reminders for a time or a specific day ("tomorrow at 3 PM", "Monday at 9 AM"). Confirmed aloud so you can verify.
+- **Time & Date Queries**: Ask "what time is it", "what's the date", or "what day is it".
+- **Offline Calculator**: Ask "what is 42 times 7" — understands spoken numbers and word operators.
+- **Modular Command Registry**: Each feature is a self-contained handler, making it easy to add new commands.
 - **Terminal-Based Interaction**: Lightweight, low-resource interface suitable for all systems.
 
 ## Tech Stack
@@ -55,17 +57,18 @@ python main.py
 ## Usage
 - Start the program and speak commands into your microphone.
 - Example commands:
-  - “Take note: Buy groceries tomorrow”
-  - “Set reminder for 7 PM: Study Python”
-  - “Show my notes”
+  - "Make a note: buy groceries tomorrow"
+  - "Read my notes"
+  - "Set a reminder to take medicine" → then "tomorrow at 3 PM"
+  - "What time is it?"
+  - "What is 42 times 7?"
+  - "Exit"
 - Notes and reminders are stored locally, maintaining full privacy.
 
 ## Modularity & Extensibility
-- Each feature is implemented as a separate module, making it easy to add new capabilities.
-- Developers can create additional modules for tasks such as:
-  - Calendar management
-  - Local file operations
-  - Music or media control
+- Each feature is a command handler in `modules/commands/`, registered through `modules/registry.py`.
+- To add a command, create a `Handler` subclass with `match()` (returns a confidence score) and `run()`, then register it in `modules/commands/__init__.py`.
+- Ideas for future commands: calendar (ICS) management, local file operations, music/media control.
 
 ## Contributing
 Contributions are welcome! Add new modules, improve voice recognition, or suggest enhancements. Please follow standard Python practices and document any new module added.

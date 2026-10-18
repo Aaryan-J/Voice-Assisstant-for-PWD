@@ -23,9 +23,12 @@ def _save_reminders(reminders):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(reminders, f, indent=2)
 
-def add_reminder(reminder_text, time_str):
+def add_reminder(reminder_text, time_str, date_str=None):
     reminders = _load_reminders()
-    reminders.append({"text": reminder_text, "time": time_str})
+    entry = {"text": reminder_text, "time": time_str}
+    if date_str:
+        entry["date"] = date_str
+    reminders.append(entry)
     _save_reminders(reminders)
 
 def _play_alarm():
@@ -53,12 +56,23 @@ def check_reminders():
     if not reminders:
         return
 
-    now = datetime.now().strftime("%H:%M")
-    triggered = [r for r in reminders if r["time"] == now]
+    now = datetime.now()
+    now_date = now.strftime("%Y-%m-%d")
+    now_time = now.strftime("%H:%M")
+
+    triggered = []
+    remaining = []
+    for r in reminders:
+        time_ok = r.get("time") == now_time
+        date_ok = r.get("date") in (None, now_date)
+        if time_ok and date_ok:
+            triggered.append(r)
+        else:
+            remaining.append(r)
+
     if not triggered:
         return
 
-    remaining = [r for r in reminders if r["time"] != now]
     _save_reminders(remaining)
 
     for r in triggered:
