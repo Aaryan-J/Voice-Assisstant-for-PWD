@@ -47,6 +47,7 @@ def listen() -> str:
     start_time = time.time()
     has_speech = False
     speech_start = 0.0
+    last_speech = 0.0
     audio_frames = []
 
     with stream_ctx as stream:
@@ -60,9 +61,10 @@ def listen() -> str:
                 if not has_speech:
                     has_speech = True
                     speech_start = now
+                last_speech = now
 
             if has_speech:
-                if rms < ENERGY_THRESHOLD * 0.5 and (now - speech_start) > SILENCE_TAIL:
+                if (now - last_speech) > SILENCE_TAIL:
                     break
                 if (now - speech_start) > PHRASE_LIMIT:
                     break

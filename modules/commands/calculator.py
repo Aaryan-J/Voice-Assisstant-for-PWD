@@ -91,7 +91,7 @@ def _to_expression(command: str) -> str:
     text = command.lower().strip()
     text = _FILLER.sub(" ", text)
     for word, sym in _WORD_OPS:
-        text = text.replace(word, f" {sym} ")
+        text = re.sub(rf"\b{re.escape(word)}\b", f" {sym} ", text)
     text = re.sub(r"[^0-9a-z+\-*/%. ]", " ", text)
     text = number_words_to_digits(text)
     return re.sub(r"\s+", " ", text).strip()

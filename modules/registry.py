@@ -20,6 +20,10 @@ def register(handler: Handler) -> None:
     _handlers.append(handler)
 
 
+def clear() -> None:
+    _handlers.clear()
+
+
 def dispatch(command: str) -> int:
     best = None
     best_score = 0.0

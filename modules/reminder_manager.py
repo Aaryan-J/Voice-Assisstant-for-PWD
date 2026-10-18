@@ -4,6 +4,7 @@ from datetime import datetime
 import numpy as np
 import sounddevice as sd
 from .utils import get_data_path, get_asset_path
+from . import voice_output
 
 REMINDERS_FILE = "reminders.json"
 ALARM_FILE = "alarms.wav"
@@ -57,15 +58,28 @@ def check_reminders():
         return
 
     now = datetime.now()
-    now_date = now.strftime("%Y-%m-%d")
     now_time = now.strftime("%H:%M")
 
     triggered = []
     remaining = []
     for r in reminders:
-        time_ok = r.get("time") == now_time
-        date_ok = r.get("date") in (None, now_date)
-        if time_ok and date_ok:
+        time_str = r.get("time")
+        date_str = r.get("date")
+        if not time_str:
+            remaining.append(r)
+            continue
+
+        if date_str:
+            try:
+                scheduled = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+            except ValueError:
+                remaining.append(r)
+                continue
+            fire = now >= scheduled
+        else:
+            fire = now_time >= time_str
+
+        if fire:
             triggered.append(r)
         else:
             remaining.append(r)
@@ -77,5 +91,6 @@ def check_reminders():
 
     for r in triggered:
         print(f"Reminder: {r['text']}")
+        voice_output.speak(r["text"])
 
     _play_alarm()

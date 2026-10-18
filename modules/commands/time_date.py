@@ -35,7 +35,7 @@ class TimeDateHandler(registry.Handler):
         questionish = any(
             w in words for w in ("what", "what's", "whats", "tell", "current", "now", "today")
         )
-        return 0.8 if questionish else 0.5
+        return 0.9 if questionish else 0.5
 
     def run(self, command: str) -> int:
         now = datetime.now()

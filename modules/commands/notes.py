@@ -33,8 +33,6 @@ class NotesHandler(registry.Handler):
 
     def _read_notes(self) -> int:
         notes = notes_manager.read_notes()
-        notes = [n for n in notes if n.lower() not in ("exit", "stop", "quit")]
-        notes = list(dict.fromkeys(notes))
 
         if notes:
             voice_output.speak("Here are your notes:")
