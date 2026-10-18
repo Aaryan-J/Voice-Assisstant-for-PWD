@@ -1,3 +1,4 @@
+import re
 import time
 
 from modules import voice_input, voice_output, reminder_manager, registry
@@ -17,6 +18,7 @@ def main():
         command = voice_input.listen()
         if not command:
             continue
+        command = re.sub(r"[^a-z ]", "", command.lower())
 
         result = registry.dispatch(command)
         if result == registry.EXIT:
