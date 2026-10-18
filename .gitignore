@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Piper voice models (downloaded separately)
+assets/voice/*.onnx
+assets/voice/*.onnx.json
+
 # C extensions
 *.so
 

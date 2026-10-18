@@ -1,27 +1,27 @@
 import json
-import os
+from .utils import get_data_path
 
-NOTES_FILE = "data/notes.json"
+NOTES_FILE = "notes.json"
+
+def _load_notes():
+    path = get_data_path(NOTES_FILE)
+    if not path.exists():
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        return []
+
+def _save_notes(notes):
+    path = get_data_path(NOTES_FILE)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(notes, f, indent=2)
 
 def add_note(note_text):
-    notes = []
-    if os.path.exists(NOTES_FILE):
-        try:
-            with open(NOTES_FILE, "r") as f:
-                notes = json.load(f)
-        except json.JSONDecodeError:
-            notes = []
+    notes = _load_notes()
     notes.append(note_text)
-    with open(NOTES_FILE, "w") as f:
-        json.dump(notes, f)
-    print("Note saved.")
+    _save_notes(notes)
 
 def read_notes():
-    if os.path.exists(NOTES_FILE):
-        try:
-            with open(NOTES_FILE, "r") as f:
-                notes = json.load(f)
-            return notes
-        except json.JSONDecodeError:
-            return []
-    return []
+    return _load_notes()

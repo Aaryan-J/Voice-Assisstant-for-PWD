@@ -1,68 +1,83 @@
-import json
 import time
+import numpy as np
 import sounddevice as sd
-from vosk import Model, KaldiRecognizer
+from faster_whisper import WhisperModel
 
-def listen():
-    # 1. Let Vosk auto-download and cache the model natively
+SAMPLE_RATE = 16000
+BLOCK_SIZE = 4000
+TIMEOUT = 5.0
+PHRASE_LIMIT = 8.0
+ENERGY_THRESHOLD = 0.01
+SILENCE_TAIL = 1.2
+
+_model = None
+_model_error = False
+
+def _get_model() -> WhisperModel | None:
+    global _model, _model_error
+    if _model is not None:
+        return _model
+    if _model_error:
+        return None
     try:
-        print("Initializing model (will download automatically on first run)...")
-        model = Model(lang="en-us")
+        _model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
     except Exception as e:
-        print(f"Error initializing Vosk model: {e}")
+        _model_error = True
+        print(f"Error: Could not load Whisper model ({e}).")
+        print("Connect to the internet once so it can download, then re-run.")
+        return None
+    return _model
+
+def listen() -> str:
+    model = _get_model()
+    if model is None:
         return ""
 
-    sample_rate = 16000
-    recognizer = KaldiRecognizer(model, sample_rate)
-
-    print("Listening...")
-
-    timeout = 5
-    phrase_limit = 5
+    try:
+        stream_ctx = sd.InputStream(
+            samplerate=SAMPLE_RATE,
+            blocksize=BLOCK_SIZE,
+            channels=1,
+            dtype="float32",
+        )
+    except Exception as e:
+        print(f"Error: No microphone detected ({e}).")
+        return ""
 
     start_time = time.time()
-    speech_started_time = None
-    has_speech_started = False
+    has_speech = False
+    speech_start = 0.0
+    audio_frames = []
 
-    with sd.RawInputStream(samplerate=sample_rate, blocksize=4000, dtype='int16', channels=1) as stream:
+    with stream_ctx as stream:
         while True:
-            data, overflowed = stream.read(4000)
-            current_time = time.time()
+            data, _ = stream.read(BLOCK_SIZE)
+            audio_frames.append(data.flatten())
+            rms = float(np.sqrt(np.mean(data ** 2)))
+            now = time.time()
 
-            if not has_speech_started and (current_time - start_time > timeout):
-                print("No speech detected.")
-                return ""
+            if rms > ENERGY_THRESHOLD:
+                if not has_speech:
+                    has_speech = True
+                    speech_start = now
 
-            if has_speech_started and speech_started_time is not None and(current_time - speech_started_time > phrase_limit):
-                print("Phrase time limit reached.")
-                result_json = recognizer.FinalResult()
-                break
-
-            if recognizer.AcceptWaveform(bytes(data)):
-                result_json = recognizer.Result()
-                break
+            if has_speech:
+                if rms < ENERGY_THRESHOLD * 0.5 and (now - speech_start) > SILENCE_TAIL:
+                    break
+                if (now - speech_start) > PHRASE_LIMIT:
+                    break
             else:
-                partial_json = recognizer.PartialResult()
-                partial_dict = json.loads(partial_json)
-                if partial_dict.get("partial", "") != "":
-                    if not has_speech_started:
-                        has_speech_started = True
-                        speech_started_time = time.time()
+                if (now - start_time) > TIMEOUT:
+                    print("No speech detected.")
+                    return ""
 
-        try:
-            result_dict = json.loads(result_json)
-            text = result_dict.get("text", "").lower().strip()
+    audio = np.concatenate(audio_frames).astype(np.float32)
+    segments, _ = model.transcribe(audio, beam_size=5, vad_filter=True)
+    text = " ".join(seg.text.strip() for seg in segments).strip().lower()
 
-            if text:
-                print(f"You said: {text}")
-                return text
-            else:
-                print("Sorry, I did not understand that.")
-                return ""
+    if text:
+        print(f"You said: {text}")
+        return text
 
-        except Exception:
-            print("Error parsing audio results.")
-            return ""
-
-if __name__ == "__main__":
-    command = listen()
+    print("Sorry, I did not understand that.")
+    return ""

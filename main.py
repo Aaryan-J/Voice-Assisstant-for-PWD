@@ -1,6 +1,8 @@
+import re
 import time
 from modules import voice_input, voice_output, notes_manager, reminder_manager
-from datetime import datetime
+
+TIME_PATTERN = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
 
 def main():
     voice_output.speak("Hello! I am your voice assistant.")
@@ -13,7 +15,7 @@ def main():
         command = voice_input.listen()
         if not command:
             continue
-        command = command.lower().strip()
+        command_words = command.split()
 
         # --- MAKE NOTES ---
         if "note" in command and ("make" in command or "add" in command):
@@ -31,7 +33,6 @@ def main():
         # --- READ NOTES ---
         elif "note" in command and ("read" in command or "show" in command):
             notes = notes_manager.read_notes()
-            # filter duplicates and system keywords
             notes = [n for n in notes if n.lower() not in ["exit", "stop", "quit"]]
             notes = list(dict.fromkeys(notes))
 
@@ -48,15 +49,25 @@ def main():
             voice_output.speak("What is the reminder?")
             print("What is the reminder?")
             reminder_text = voice_input.listen()
+            if not reminder_text:
+                voice_output.speak("I did not catch that. Reminder not saved.")
+                print("I did not catch that. Reminder not saved.")
+                continue
+
             voice_output.speak("At what time? Please say in HH:MM format.")
             print("At what time? Please say in HH:MM format.")
             time_text = voice_input.listen()
-            reminder_manager.add_reminder(reminder_text, time_text)
+            if not time_text or not TIME_PATTERN.match(time_text.strip()):
+                voice_output.speak("I did not catch a valid time. Reminder not saved.")
+                print("I did not catch a valid time. Reminder not saved.")
+                continue
+
+            reminder_manager.add_reminder(reminder_text, time_text.strip())
             voice_output.speak("Reminder saved.")
             print("Reminder saved.")
 
         # --- EXIT ---
-        elif any(word in command for word in ["exit", "stop", "quit"]):
+        elif any(word in command_words for word in ("exit", "stop", "quit")):
             voice_output.speak("Goodbye!")
             print("Goodbye!")
             break

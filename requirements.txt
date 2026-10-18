@@ -1,4 +1,4 @@
-SpeechRecognition
-pyttsx3
-pygame
-keyboard
+faster-whisper>=1.2.0
+piper-tts>=1.8.0
+sounddevice>=0.5.5
+numpy>=2.0.0
